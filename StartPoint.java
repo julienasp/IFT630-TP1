@@ -40,11 +40,14 @@ public class StartPoint {
         
         //Chrono start
         long start = System.nanoTime();
+        
+        //Sequential process executed
         result = StartPoint.sequential(listOfFiles);
         
         //Chrono end!
         long time = System.nanoTime() - start;
         
+        //Writing down the result
         File file=new File( RESULTPATH + "out-sequential.txt");   
         try {
             FileWriter fw=new FileWriter(file.getAbsoluteFile());
@@ -54,10 +57,8 @@ public class StartPoint {
         } catch (IOException ex) {
             Logger.getLogger(StartPoint.class.getName()).log(Level.SEVERE, null, ex);
         } 
-        
-        
-        
-        Log.log(result.toString());
+                
+        //Printing statistics        
         System.out.printf(Thread.currentThread().getName() + ": Sequential: " + listOfFiles.length + " files, " + result.size() +" words matching the length criteria, tasks took %.3f ms%n", time/1e6);
         int nbOccurenceOfMinutes = ( result.get("passage") == null ) ? 0 : result.get("passage");
         System.out.println(Thread.currentThread().getName() + ": Nb occurrences of the word \"passage\": " + nbOccurenceOfMinutes);
