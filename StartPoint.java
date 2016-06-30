@@ -1,6 +1,9 @@
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.concurrent.Callable;
@@ -32,7 +35,42 @@ public class StartPoint {
         File[] listOfFiles = folder.listFiles();
        
         
-        Log.log(Thread.currentThread().getName() + ": We will process: " + listOfFiles.length + " files."); 
+        Log.log(Thread.currentThread().getName() + ": We will process: " + listOfFiles.length + " files.");
+        HashMap<String, Integer> result = new HashMap();
+        
+        //Chrono start
+        long start = System.nanoTime();
+        result = StartPoint.sequential(listOfFiles);
+        
+        //Chrono end!
+        long time = System.nanoTime() - start;
+        
+        File file=new File( RESULTPATH + "out-sequential.txt");   
+        try {
+            FileWriter fw=new FileWriter(file.getAbsoluteFile());
+            BufferedWriter bw=new BufferedWriter(fw);
+            bw.write(result.toString());
+            bw.close();
+        } catch (IOException ex) {
+            Logger.getLogger(StartPoint.class.getName()).log(Level.SEVERE, null, ex);
+        } 
+        
+        
+        
+        Log.log(result.toString());
+        System.out.printf(Thread.currentThread().getName() + ": Sequential: " + listOfFiles.length + " files, " + result.size() +" words matching the length criteria, tasks took %.3f ms%n", time/1e6);
+        int nbOccurenceOfMinutes = ( result.get("passage") == null ) ? 0 : result.get("passage");
+        System.out.println(Thread.currentThread().getName() + ": Nb occurrences of the word \"passage\": " + nbOccurenceOfMinutes);
+        System.out.println(Thread.currentThread().getName() + ": Detailed results can be found in \"results\\out-sequential.txt\"");
+
+
+        
+       /*
+        
+        
+        
+        
+        
         ExecutorService executor = Executors.newFixedThreadPool(POOLSIZE);
         
         
@@ -58,26 +96,34 @@ public class StartPoint {
         }
         //Chrono end!
         long time = System.nanoTime() - start;
-        System.out.printf(Thread.currentThread().getName() + ": Prime thread: Tasks took %.3f ms to run%n", time/1e6);
+        System.out.printf(Thread.currentThread().getName() + ": Prime thread: Tasks took %.3f ms to run%n", time/1e6);*/
     }
     
     public static HashMap<String, Integer> sequential(File[] filesToProcess){
         HashMap<String, Integer> result = new HashMap();
-          
+        
+        
+        //Iterate through all the files
         for (File file : filesToProcess) {
             if (file.isFile()) {
                 try {
                     Scanner scan = new Scanner(file); 
+                    
+                    //Read everyword of a file
                     while(scan.hasNext()){
                         String currentWord = scan.next();
+                        
+                        //If the word is big enough we process it
                         if(currentWord.length() == StartPoint.WORDLENGTHCRTERIA){
+                            
+                            //If the word is already in the hashtable we incremente it
                             if(result.containsKey(currentWord)){
                                 result.replace(currentWord, result.get(currentWord) + 1);
                             }
+                            //Otherwise we add it
                             else{
                                 result.put(currentWord, 1);
                             }
-
                         }
                     }
                 } catch (FileNotFoundException ex) {
