@@ -30,6 +30,8 @@ public class StartPoint {
     /*************  MAIN *******************/
     /***************************************/
     public static void main(String[] args) {
+        //Chrono start
+        long globalChronoStart = System.nanoTime();
         Log.log(Thread.currentThread().getName() + ": Prime thread is runnning...");
         Log.log(Thread.currentThread().getName() + ": Starting all the services...");        
 
@@ -41,13 +43,13 @@ public class StartPoint {
         HashMap<String, Integer> result = new HashMap();
         
         //Chrono start
-        long start = System.nanoTime();
+        long senquentialStart = System.nanoTime();
         
         //Sequential process executed
-        result = StartPoint.sequential(listOfFiles);
+        result = StartPoint.sequential(listOfFiles,0,listOfFiles.length-1);
         
         //Chrono end!
-        long time = System.nanoTime() - start;
+        long senquentialTime = System.nanoTime() - senquentialStart;
         
         try{
             //Writing down the result
@@ -65,28 +67,34 @@ public class StartPoint {
         }
                 
         //Printing statistics        
-        System.out.printf(Thread.currentThread().getName() + ": Sequential: " + listOfFiles.length + " files, " + result.size() +" words matching the length criteria, tasks took %.3f ms%n", time/1e6);
+        System.out.printf(Thread.currentThread().getName() + ": Sequential: " + listOfFiles.length + " files, " + result.size() +" words matching the length criteria, tasks took %.3f ms%n", senquentialTime/1e6);
         int nbOccurenceOfMinutes = ( result.get("passage") == null ) ? 0 : result.get("passage");
         System.out.println(Thread.currentThread().getName() + ": Nb occurrences of the word \"passage\": " + nbOccurenceOfMinutes);
         System.out.println(Thread.currentThread().getName() + ": Detailed results can be found in \"results\\out-sequential.txt\"");
 
-
         
+        //Parallel execution
+        Callable<HashMap<String, Integer>> callable = new Callable<HashMap<String, Integer>>() {
+            @Override
+            public HashMap<String, Integer> call() {
+                HashMap<String, Integer> result = new HashMap();
+                return result;
+            }
+        };
+        
+        
+       //Chrono end!
+       long globalTime = System.nanoTime() - globalChronoStart; 
        /*
         
         
         
         
         
-        ExecutorService executor = Executors.newFixedThreadPool(POOLSIZE);
         
         
-    Callable<Integer> callable = new Callable<Integer>() {
-        @Override
-        public Integer call() {
-            return 2;
-        }
-    };
+        
+    
     Future<Integer> future = executor.submit(callable);
     // future.get() returns 2 or raises an exception if the thread dies, so safer
     executor.shutdown();
@@ -114,16 +122,24 @@ public class StartPoint {
         return mergeResult;
     }
     
-    public static HashMap<String, Integer> sequential(File[] filesToProcess){
+    public static HashMap<String, Integer> parallel(File[] filesToProcess,Integer start,Integer end,Integer threshold){
+        HashMap<String, Integer> result = new HashMap();
+        Integer n = end - start;
+        if (n <= threshold)
+            return sequential(filesToProcess, start, end);
+        return result;
+    }
+    
+    public static HashMap<String, Integer> sequential(File[] filesToProcess, Integer start,Integer end){
         HashMap<String, Integer> result = new HashMap();
         Scanner scan = null;
         
-        //Iterate through all the files
-        for (File file : filesToProcess) {
-            if (file.isFile()) {
+        //Iterate through all the files        
+        for (Integer i = start; i <= end; i++){
+            if (filesToProcess[i].isFile()) {
                 try {   
                     try {
-                        scan = new Scanner(file);
+                        scan = new Scanner(filesToProcess[i]);
                         
                         //Read everyword of a file
                         while(scan.hasNext()){
