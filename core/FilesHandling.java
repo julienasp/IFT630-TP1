@@ -46,18 +46,18 @@ public class FilesHandling  {
          Log.log(Thread.currentThread().getName() + ": parallel(): Threashold is : " + threshold);
          Log.log(Thread.currentThread().getName() + ": parallel(): start index is: " + start);
          Log.log(Thread.currentThread().getName() + ": parallel(): end index is: " + end);
-         HashMap<String, Integer> result = new HashMap();
+         
          Integer n = (end + 1) - start; // length
          if (n <= threshold){
              return sequential(filesToProcess, start, end);
-         }        
+         }
+        
          Future<HashMap<String, Integer>> f0 = executor.submit(
            new Callable<HashMap<String, Integer>>() {
                @Override
                public HashMap<String, Integer> call() throws InterruptedException, ExecutionException {                  
                    Log.log(Thread.currentThread().getName() + ": f0 call(): is being executed...");
-                   Log.log(Thread.currentThread().getName() + ": f0 call(): start index is: " + start);
-                   Log.log(Thread.currentThread().getName() + ": f0 call(): end index is: " + end);
+                   Log.log(Thread.currentThread().getName() + ": f0 call(): will call parallel with: start=: " + start + " and end=: " + end/2);
                    return parallel(filesToProcess,start,end/2,threshold);
                }
            });
@@ -65,13 +65,11 @@ public class FilesHandling  {
            new Callable<HashMap<String, Integer>>() {
                @Override
                public HashMap<String, Integer> call() throws InterruptedException, ExecutionException{
-                   Log.log(Thread.currentThread().getName() + ": f1 call(): is being executed...");
-                   Log.log(Thread.currentThread().getName() + ": f1 call(): start index is: " + start);
-                   Log.log(Thread.currentThread().getName() + ": f1 call(): end index is: " + end);
+                   Log.log(Thread.currentThread().getName() + ": f1 call(): is being executed...");                 
+                   Log.log(Thread.currentThread().getName() + ": f1 call(): will call parallel with: start=: " + ((end/2)+1) + " and end=: " + end);
                    return parallel(filesToProcess,((end/2)+1),end,threshold);
                }
-           });
-         Log.log(Thread.currentThread().getName() + ": parallel(): has been executed.");        
+           });                
          return mergeResult(f0.get(),f1.get());
      }
 
