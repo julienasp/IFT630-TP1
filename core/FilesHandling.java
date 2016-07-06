@@ -31,7 +31,7 @@ public class FilesHandling  {
     }
     
     public HashMap<String, Integer> mergeResult(HashMap<String,Integer> hm1, HashMap<String,Integer> hm2){
-        HashMap<String, Integer> mergeResult = new HashMap();
+        HashMap<String, Integer> mergeResult = new HashMap(hm1);
         
         for (Map.Entry<String, Integer> e : hm2.entrySet()){
             mergeResult.merge(e.getKey(), e.getValue(),(x, y) -> {return x + y;});

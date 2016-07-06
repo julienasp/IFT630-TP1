@@ -71,7 +71,7 @@ public class StartPoint {
         }
                 
         //Printing statistics        
-        System.out.printf(Thread.currentThread().getName() + ": Sequential: " + listOfFiles.length + " files, " + result.size() +" words matching the length criteria, tasks took %.3f ms%n", senquentialTime/1e6);
+        System.out.printf(Thread.currentThread().getName() + ": (Sequential): " + listOfFiles.length + " files, " + result.size() +" words matching the length criteria, tasks took %.3f ms%n", senquentialTime/1e6);
         int nbOccurenceOfMinutes = ( result.get("passage") == null ) ? 0 : result.get("passage");
         System.out.println(Thread.currentThread().getName() + ": Nb occurrences of the word \"passage\": " + nbOccurenceOfMinutes);
         System.out.println(Thread.currentThread().getName() + ": Detailed results can be found in \"results\\out-sequential.txt\"");
@@ -80,7 +80,7 @@ public class StartPoint {
         HashMap<String, Integer> parallelResult = new HashMap();
         try {
             int loopCount = 0;
-            for (int threshold = 256; threshold <= 4096; threshold *= 2)
+            for (int threshold = 256; threshold <= 8192; threshold *= 2)
             {               
                 long parallelStart = System.nanoTime();
                 parallelResult = fh.parallel(listOfFiles, 0, listOfFiles.length-1, threshold);
@@ -93,7 +93,7 @@ public class StartPoint {
                     try {
                         FileWriter fw=new FileWriter(file.getAbsoluteFile());
                         bw=new BufferedWriter(fw);
-                        bw.write(result.toString());    
+                        bw.write(parallelResult.toString());    
                     } finally{
                         if(bw != null) bw.close();            
                     }
@@ -102,7 +102,7 @@ public class StartPoint {
                 }
                 
                 //Printing statistics        
-                System.out.printf(Thread.currentThread().getName() + ": Parallel: " + listOfFiles.length + " files, " + result.size() +" words matching the length criteria, tasks took %.3f ms (Sequential threshold: %d%n)", parallelTime/1e6, threshold);
+                System.out.printf("%n"+Thread.currentThread().getName() + ": (Parallel): " + listOfFiles.length + " files, " + result.size() +" words matching the length criteria, tasks took %.3f ms (Sequential threshold: %d)%n", parallelTime/1e6, threshold);
                 nbOccurenceOfMinutes = ( parallelResult.get("passage") == null ) ? 0 : parallelResult.get("passage");
                 System.out.println(Thread.currentThread().getName() + ": Nb occurrences of the word \"passage\": " + nbOccurenceOfMinutes);
                 System.out.println(Thread.currentThread().getName() + ": Detailed results can be found in \"results\\out-parallel-"+loopCount+".txt\"");
