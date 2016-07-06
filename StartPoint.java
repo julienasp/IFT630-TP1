@@ -27,6 +27,8 @@ public class StartPoint {
     public static final int WORDLENGTHCRTERIA = 7;
     public static final int POOLSIZE = Runtime.getRuntime().availableProcessors();
     public static ExecutorService executor = Executors.newCachedThreadPool();
+    //public static ExecutorService executor = Executors.newSingleThreadExecutor();
+    
     
     /***************************************/
     /*************  MAIN *******************/
@@ -125,16 +127,22 @@ public class StartPoint {
         System.out.printf(Thread.currentThread().getName() + ": Prime thread: Tasks took %.3f ms to run%n", globalTime/1e6);
     }
     
-    public static HashMap<String, Integer> mergeResult(HashMap<String,Integer> hm1, HashMap<String,Integer> hm2){    
+    public static HashMap<String, Integer> mergeResult(HashMap<String,Integer> hm1, HashMap<String,Integer> hm2){
+        Log.log(Thread.currentThread().getName() + ": mergeResult(): is being executed...");
         HashMap<String, Integer> mergeResult = new HashMap();
               
         for (Map.Entry<String, Integer> e : hm2.entrySet()){
             mergeResult.merge(e.getKey(), e.getValue(),(x, y) -> {return x + y;});
         }
+        Log.log(Thread.currentThread().getName() + ": mergeResult(): has been executed.");
         return mergeResult;
     }
     
     public static HashMap<String, Integer> parallel(File[] filesToProcess,Integer start,Integer end,Integer threshold) throws InterruptedException, ExecutionException{
+        Log.log(Thread.currentThread().getName() + ": parallel(): is being executed...");
+        Log.log(Thread.currentThread().getName() + ": parallel(): Threashold is : " + threshold);
+        Log.log(Thread.currentThread().getName() + ": parallel(): start index is: " + start);
+        Log.log(Thread.currentThread().getName() + ": parallel(): end index is: " + end);
         HashMap<String, Integer> result = new HashMap();
         Integer n = (end + 1) - start; // length
         if (n <= threshold){
@@ -144,6 +152,7 @@ public class StartPoint {
           new Callable<HashMap<String, Integer>>() {
               @Override
               public HashMap<String, Integer> call() throws InterruptedException, ExecutionException {                  
+                  Log.log(Thread.currentThread().getName() + ": f0 call(): is being executed...");
                   return StartPoint.parallel(filesToProcess,start,end/2,threshold);
               }
           });
@@ -151,9 +160,11 @@ public class StartPoint {
           new Callable<HashMap<String, Integer>>() {
               @Override
               public HashMap<String, Integer> call() throws InterruptedException, ExecutionException{
-                  return StartPoint.parallel(filesToProcess,end/2,end,threshold);
+                  Log.log(Thread.currentThread().getName() + ": f1 call(): is being executed...");
+                  return StartPoint.parallel(filesToProcess,((end/2)+1),end,threshold);
               }
-          });        
+          });
+        Log.log(Thread.currentThread().getName() + ": parallel(): has been executed.");        
         return mergeResult(f0.get(),f1.get());
     }
     
