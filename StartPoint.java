@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -25,6 +26,7 @@ public class StartPoint {
     public static final String RESULTPATH = "results/";
     public static final int WORDLENGTHCRTERIA = 7;
     public static final int POOLSIZE = Runtime.getRuntime().availableProcessors();
+    public static ExecutorService executor = Executors.newCachedThreadPool();
     
     /***************************************/
     /*************  MAIN *******************/
@@ -72,47 +74,57 @@ public class StartPoint {
         System.out.println(Thread.currentThread().getName() + ": Nb occurrences of the word \"passage\": " + nbOccurenceOfMinutes);
         System.out.println(Thread.currentThread().getName() + ": Detailed results can be found in \"results\\out-sequential.txt\"");
 
-        
         //Parallel execution
-        Callable<HashMap<String, Integer>> callable = new Callable<HashMap<String, Integer>>() {
-            @Override
-            public HashMap<String, Integer> call() {
-                HashMap<String, Integer> result = new HashMap();
-                return result;
-            }
-        };
-        
-        
-       //Chrono end!
-       long globalTime = System.nanoTime() - globalChronoStart; 
-       /*
-        
-        
-        
-        
-        
-        
-        
-        
-    
-    Future<Integer> future = executor.submit(callable);
-    // future.get() returns 2 or raises an exception if the thread dies, so safer
-    executor.shutdown();
-
-        //Chrono start
-        long start = System.nanoTime();
-       
-
+        HashMap<String, Integer> parallelResult = new HashMap();
         try {
+            int loopCount = 0;
+            for (int threshold = 256; threshold <= 4096; threshold *= 2)
+            {               
+                long parallelStart = System.nanoTime();
+                parallelResult = StartPoint.parallel(listOfFiles, 0, listOfFiles.length-1, threshold);
+                long parallelTime = System.nanoTime() - parallelStart;
+                
+                try{
+                    //Writing down the result
+                    File file=new File( RESULTPATH + "out-parallel-"+loopCount+".txt");
+                    BufferedWriter bw = null;
+                    try {
+                        FileWriter fw=new FileWriter(file.getAbsoluteFile());
+                        bw=new BufferedWriter(fw);
+                        bw.write(result.toString());    
+                    } finally{
+                        if(bw != null) bw.close();            
+                    }
+                }catch(IOException ex){
+                    Logger.getLogger(StartPoint.class.getName()).log(Level.SEVERE, null, ex);            
+                }
+                
+                //Printing statistics        
+                System.out.printf(Thread.currentThread().getName() + ": Parallel: " + listOfFiles.length + " files, " + result.size() +" words matching the length criteria, tasks took %.3f ms (Sequential threshold: %d%n)", parallelTime/1e6, threshold);
+                nbOccurenceOfMinutes = ( parallelResult.get("passage") == null ) ? 0 : parallelResult.get("passage");
+                System.out.println(Thread.currentThread().getName() + ": Nb occurrences of the word \"passage\": " + nbOccurenceOfMinutes);
+                System.out.println(Thread.currentThread().getName() + ": Detailed results can be found in \"results\\out-parallel-"+loopCount+".txt\"");
+                   
+                loopCount++;
+            } 
+        } catch (InterruptedException ex) {
+            Logger.getLogger(StartPoint.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ExecutionException ex) {
+            Logger.getLogger(StartPoint.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+       try {
             executor.shutdown();
             executor.awaitTermination(1, TimeUnit.HOURS); // or longer.    
         } catch (InterruptedException ex) {
             Log.log(Thread.currentThread().getName() + ": Prime thread: InterruptedException:" + ex.getMessage());
         }
-        //Chrono end!
-        long time = System.nanoTime() - start;
-        System.out.printf(Thread.currentThread().getName() + ": Prime thread: Tasks took %.3f ms to run%n", time/1e6);*/
+       //Chrono end!
+       long globalTime = System.nanoTime() - globalChronoStart;  
+
+        System.out.printf(Thread.currentThread().getName() + ": Prime thread: Tasks took %.3f ms to run%n", globalTime/1e6);
     }
+    
     public static HashMap<String, Integer> mergeResult(HashMap<String,Integer> hm1, HashMap<String,Integer> hm2){    
         HashMap<String, Integer> mergeResult = new HashMap();
               
@@ -122,12 +134,27 @@ public class StartPoint {
         return mergeResult;
     }
     
-    public static HashMap<String, Integer> parallel(File[] filesToProcess,Integer start,Integer end,Integer threshold){
+    public static HashMap<String, Integer> parallel(File[] filesToProcess,Integer start,Integer end,Integer threshold) throws InterruptedException, ExecutionException{
         HashMap<String, Integer> result = new HashMap();
-        Integer n = end - start;
-        if (n <= threshold)
+        Integer n = (end + 1) - start; // length
+        if (n <= threshold){
             return sequential(filesToProcess, start, end);
-        return result;
+        }        
+        Future<HashMap<String, Integer>> f0 = executor.submit(
+          new Callable<HashMap<String, Integer>>() {
+              @Override
+              public HashMap<String, Integer> call() throws InterruptedException, ExecutionException {                  
+                  return StartPoint.parallel(filesToProcess,start,end/2,threshold);
+              }
+          });
+        Future<HashMap<String, Integer>> f1 = executor.submit(
+          new Callable<HashMap<String, Integer>>() {
+              @Override
+              public HashMap<String, Integer> call() throws InterruptedException, ExecutionException{
+                  return StartPoint.parallel(filesToProcess,end/2,end,threshold);
+              }
+          });        
+        return mergeResult(f0.get(),f1.get());
     }
     
     public static HashMap<String, Integer> sequential(File[] filesToProcess, Integer start,Integer end){
