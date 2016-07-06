@@ -18,6 +18,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import utils.Log;
 import core.FilesHandling;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
 
 public class StartPoint {
     /************************************/
@@ -78,13 +80,15 @@ public class StartPoint {
 
         //Parallel execution
         HashMap<String, Integer> parallelResult = new HashMap();
+        HashMap<Integer,Long> chronoResults = new HashMap<Integer,Long>();
         try {
             int loopCount = 0;
-            for (int threshold = 256; threshold <= 8192; threshold *= 2)
+            for (int threshold = 256; threshold <= 16384; threshold *= 2)
             {               
                 long parallelStart = System.nanoTime();
                 parallelResult = fh.parallel(listOfFiles, 0, listOfFiles.length-1, threshold);
                 long parallelTime = System.nanoTime() - parallelStart;
+                chronoResults.put(threshold,parallelTime);
                 
                 try{
                     //Writing down the result
@@ -114,16 +118,19 @@ public class StartPoint {
         } catch (ExecutionException ex) {
             Logger.getLogger(StartPoint.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-       try {
-            executor.shutdown();
-            executor.awaitTermination(1, TimeUnit.HOURS); // or longer.    
-        } catch (InterruptedException ex) {
-            Log.log(Thread.currentThread().getName() + ": Prime thread: InterruptedException:" + ex.getMessage());
-        }
-       //Chrono end!
-       long globalTime = System.nanoTime() - globalChronoStart;  
+        executor.shutdown();            
+      
+        //Chrono end!
+        long globalTime = System.nanoTime() - globalChronoStart;
+        DecimalFormat df = new DecimalFormat("0.0000");        
 
         System.out.printf(Thread.currentThread().getName() + ": Prime thread: Tasks took %.3f ms to run%n", globalTime/1e6);
-    }
+        System.out.println("Statistics:");       
+        System.out.println(Thread.currentThread().getName() + ": Sequential algorithm took "+df.format(((senquentialTime/1e6)/(globalTime/1e6))*100)+"% of the total run time.");
+        System.out.println(Thread.currentThread().getName() + ": Parallel algorithms took :");
+        for (Map.Entry<Integer, Long> e : chronoResults.entrySet())
+        {   
+            System.out.println("* Sequential threshold of " + e.getKey()+ ", took "+ df.format(((e.getValue()/1e6)/(globalTime/1e6))*100) +" of the total run time.");
+        }
+        }
 }
