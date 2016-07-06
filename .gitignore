@@ -5,3 +5,4 @@
 /dist/
 *.properties
 nbproject/project.properties
+/nbproject/

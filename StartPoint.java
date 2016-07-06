@@ -124,13 +124,13 @@ public class StartPoint {
         long globalTime = System.nanoTime() - globalChronoStart;
         DecimalFormat df = new DecimalFormat("0.0000");        
 
-        System.out.printf(Thread.currentThread().getName() + ": Prime thread: Tasks took %.3f ms to run%n", globalTime/1e6);
+        System.out.printf(Thread.currentThread().getName() + ": Prime thread: Tasks took %.3f ms to run%n%n", globalTime/1e6);
         System.out.println("Statistics:");       
         System.out.println(Thread.currentThread().getName() + ": Sequential algorithm took "+df.format(((senquentialTime/1e6)/(globalTime/1e6))*100)+"% of the total run time.");
         System.out.println(Thread.currentThread().getName() + ": Parallel algorithms took :");
         for (Map.Entry<Integer, Long> e : chronoResults.entrySet())
         {   
-            System.out.println("* Sequential threshold of " + e.getKey()+ ", took "+ df.format(((e.getValue()/1e6)/(globalTime/1e6))*100) +" of the total run time.");
+            System.out.println("\t* Sequential threshold of " + e.getKey()+ ", took "+ df.format(((e.getValue()/1e6)/(globalTime/1e6))*100) +"% of the total run time.");
         }
         }
 }
