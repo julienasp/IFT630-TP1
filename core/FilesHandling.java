@@ -48,7 +48,9 @@ public class FilesHandling  {
          Log.log(Thread.currentThread().getName() + ": parallel(): end index is: " + end);
          
          Integer n = (end + 1) - start; // length
+         Log.log(Thread.currentThread().getName() + ": parallel(): n equals: " + n);
          if (n <= threshold){
+             Log.log(Thread.currentThread().getName() + ": parallel(): threshold condition is true: ");
              return sequential(filesToProcess, start, end);
          }
         

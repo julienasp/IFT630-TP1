@@ -27,7 +27,6 @@ public class StartPoint {
     public static final String RESULTPATH = "results/";    
     public static final int POOLSIZE = Runtime.getRuntime().availableProcessors();
     public static ExecutorService executor = Executors.newCachedThreadPool();
-    //public static ExecutorService executor = Executors.newSingleThreadExecutor();
     
     
     /***************************************/
